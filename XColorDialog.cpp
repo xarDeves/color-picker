@@ -2,61 +2,39 @@
 #include <QDebug>
 
 XColorDialog::XColorDialog(QWidget *parent) :
-    QDialog(parent)
-{
-    setFixedSize(552,274);
+    QDialog(parent){
+
+    pal = new QPalette();
+    pal->setColor(QPalette::AlternateBase, BG_COLOR);
+    pal->setColor(QPalette::Window, BG_COLOR);
+    pal->setColor(QPalette::Button, BG_COLOR);
+    pal->setColor(QPalette::Base, BG_COLOR);
+    pal->setColor(QPalette::Text, Qt::white);
+    pal->setColor(QPalette::WindowText, Qt::white);
+    pal->setColor(QPalette::ToolTipText, Qt::white);
+    pal->setColor(QPalette::ButtonText, Qt::white);
+    pal->setColor(QPalette::BrightText, Qt::red);
+    pal->setColor(QPalette::ToolTipBase, Qt::black);
+    pal->setColor(QPalette::HighlightedText, Qt::black);
+    pal->setColor(QPalette::Link, QColor(42, 130, 218));
+    pal->setColor(QPalette::Highlight, QColor(42, 130, 218));
+    this->setAutoFillBackground(true);
+    this->setPalette(*pal);
+
+    setFixedSize(663,276);
     SetupUI();
 
-    QVector<QColor> rainbow;
-    for ( int i = 0; i < 360; i+= 360/6 )
-        rainbow.push_back(QColor::fromHsv(i,255,255));
-    rainbow.push_back(Qt::red);
-    sliderHue->setColors(rainbow);
-
-    this->setWindowTitle("Color Plane");
     setAcceptDrops(true);
 }
 
-void XColorDialog::SetupUI()
-{
+void XColorDialog::SetupUI(){
     hLayoutAll = new QHBoxLayout(this);
-    hLayoutAll->setContentsMargins(8,10,8,10);
-    colorSquare = new XColorSquare(this);
-    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
-    colorSquare->setSizePolicy(sizePolicy);
-    hLayoutAll->addWidget(colorSquare);
-    verticalSlider = new XGradientSlider(this);
-    verticalSlider->setOrientation(Qt::Vertical);
-    hLayoutAll->addWidget(verticalSlider);
 
-    vLayoutPreview = new QGridLayout;
-    vLayoutPreview->setSpacing(1);
-    labelCurr = new QLabel("Current");
-    labeComp = new QLabel("Complementary");
-    labelOpp = new QLabel("Opposite");
-    labelRev = new QLabel("Reverse");
-    colorPreviewCurr = new XColorPreview(this);
-    colorPreviewComp = new XColorPreview(this);
-    colorPreviewOpp = new XColorPreview(this);
-    colorPreviewRev = new XColorPreview(this);
-    colorPreviewCurr->setSizePolicy(sizePolicy);
-    colorPreviewComp->setSizePolicy(sizePolicy);
-    colorPreviewOpp->setSizePolicy(sizePolicy);
-    colorPreviewRev->setSizePolicy(sizePolicy);
+    setupPicker();
+    setupPeviews();
+    setupSliders();
 
-    vLayoutPreview->addWidget(labelCurr, 0, 0);
-    vLayoutPreview->addWidget(colorPreviewCurr, 1, 0);
-
-    vLayoutPreview->addWidget(labelOpp, 0, 1);
-    vLayoutPreview->addWidget(colorPreviewOpp, 1, 1);
-
-    vLayoutPreview->addWidget(labeComp, 0 , 2);
-    vLayoutPreview->addWidget(colorPreviewComp, 1, 2);
-
-    vLayoutPreview->addWidget(labelRev, 0 , 3);
-    vLayoutPreview->addWidget(colorPreviewRev, 1 ,3);
-
-    vLayoutButtons = new QVBoxLayout;
+    /*vLayoutButtons = new QVBoxLayout;
     okButton = new QPushButton("OK");
     cancelButton = new QPushButton("Cancel");
     vLayoutButtons->addWidget(okButton);
@@ -69,12 +47,82 @@ void XColorDialog::SetupUI()
     hLayoutPreviewButton->addLayout(vLayoutPreview);
     hLayoutPreviewButton->addStretch();
     hLayoutPreviewButton->addLayout(vLayoutButtons);
-    hLayoutPreviewButton->setContentsMargins(25,0,0,0);
+    hLayoutPreviewButton->setContentsMargins(25,0,0,0)*/ 
+
+    //paint event overides stylesheets for XGradientSlider
+    /*sliderBlue->setStyleSheet("QSlider::groove:horizontal { "
+        "border: 1px solid #999999; "
+        "height: 20px; "
+        "background: qlineargradient(x1:0, y1:0, x2:0, y2:1, stop:0 #B1B1B1, stop:1 #c4c4c4); "
+        "margin: 2px 0; "
+        "} "
+        "QSlider::handle:horizontal { "
+        "background: qlineargradient(x1:0, y1:0, x2:1, y2:1, stop:0 #b4b4b4, stop:1 #8f8f8f); "
+        "border: 1px solid #5c5c5c; "
+        "width: 30px; "
+        "margin: -2px 0px; "
+        "} ");
+
+    sliderBlue->setStyleSheet("QSlider::groove:horizontal {background-color:yellow;}"
+        "QSlider::handle:horizontal {background-color:blue; height:16px; width: 16px;}");*/
+
+    hLayoutAll->addWidget(colorSquare);
+    hLayoutAll->addWidget(verticalSlider);
+    hLayoutAll->addLayout(vLayoutPreview);
+    hLayoutAll->addLayout(gLayoutSlider);
+
+    this->setLayout(hLayoutAll);
+
+    setConnect();
+    setVerticalSlider();
+    setPreviewColors(color());
+}
+void XColorDialog::setupPicker() {
+
+    colorSquare = new XColorSquare(this);
+    QSizePolicy sizePolicy(QSizePolicy::MinimumExpanding, QSizePolicy::MinimumExpanding);
+    colorSquare->setSizePolicy(sizePolicy);
+    verticalSlider = new XGradientSlider(this);
+    verticalSlider->setOrientation(Qt::Vertical);
+}
+void XColorDialog::setupPeviews() {
+
+    vLayoutPreview = new QVBoxLayout;
+    vLayoutPreview->setSpacing(1);
+    checkBoxCurr = new QCheckBox("Current");
+    checkBoxComp = new QCheckBox("Complementary");
+    checkBoxOpp = new QCheckBox("Opposite");
+    checkBoxRev = new QCheckBox("Reverse");
+    colorPreviewCurr = new XColorPreview(this);
+    colorPreviewComp = new XColorPreview(this);
+    colorPreviewOpp = new XColorPreview(this);
+    colorPreviewRev = new XColorPreview(this);
+
+    checkBoxCurr->setChecked(true);
+
+    vLayoutPreview->addWidget(checkBoxCurr);
+    vLayoutPreview->addWidget(colorPreviewCurr);
+
+    vLayoutPreview->addWidget(checkBoxComp);
+    vLayoutPreview->addWidget(colorPreviewComp);
+
+    vLayoutPreview->addWidget(checkBoxOpp);
+    vLayoutPreview->addWidget(colorPreviewOpp);
+
+    vLayoutPreview->addWidget(checkBoxRev);
+    vLayoutPreview->addWidget(colorPreviewRev);
+
+    vLayoutPreview->setAlignment(checkBoxCurr, Qt::AlignLeft);
+    vLayoutPreview->setAlignment(checkBoxComp, Qt::AlignLeft);
+    vLayoutPreview->setAlignment(checkBoxOpp, Qt::AlignLeft);
+    vLayoutPreview->setAlignment(checkBoxRev, Qt::AlignLeft);
+}
+void XColorDialog::setupSliders(){
 
     gLayoutSlider = new QGridLayout;
-
-    labelAlpha = new QLabel("alpha");
+    labelAlpha = new QLabel("alpha:");
     spinAlpha = new QSpinBox(this);
+    spinAlpha->setPalette(*pal);
     spinAlpha->setMaximum(100);
     spinAlpha->setValue(100);
     labelAlphaSuffix = new QLabel("%");
@@ -82,107 +130,115 @@ void XColorDialog::SetupUI()
     sliderAlpha->setMaximum(100);
     sliderAlpha->setValue(100);
     sliderAlpha->setOrientation(Qt::Horizontal);
-    gLayoutSlider->addWidget(labelAlpha,0,0,1,1);
-    gLayoutSlider->addWidget(spinAlpha, 0,1,1,1);
-    gLayoutSlider->addWidget(labelAlphaSuffix, 0,2,1,1);
-    gLayoutSlider->addWidget(sliderAlpha, 0,3,1,1);
-
-    gLayoutSlider->setVerticalSpacing(3);
+    gLayoutSlider->addWidget(labelAlpha, 0, 0, 1, 1);
+    gLayoutSlider->addWidget(spinAlpha, 0, 1, 1, 1);
+    gLayoutSlider->addWidget(labelAlphaSuffix, 0, 2, 1, 1);
+    gLayoutSlider->addWidget(sliderAlpha, 0, 3, 1, 1);
 
     radioHue = new QRadioButton("H:");
     radioHue->setChecked(true);
     spinHue = new QSpinBox(this);
+    spinHue->setPalette(*pal);
     spinHue->setMaximum(359);
     labelHueSuffix = new QLabel("°");
     sliderHue = new XGradientSlider(this);
+    QVector<QColor> rainbow;
+    for (int i = 0; i < 360; i += 360 / 6)
+        rainbow.push_back(QColor::fromHsv(i, 255, 255));
+    rainbow.push_back(Qt::red);
+    sliderHue->setColors(rainbow);
     sliderHue->setMaximum(359);
     sliderHue->setOrientation(Qt::Horizontal);
-    gLayoutSlider->addWidget(radioHue,1,0,1,1);
-    gLayoutSlider->addWidget(spinHue, 1,1,1,1);
-    gLayoutSlider->addWidget(labelHueSuffix, 1,2,1,1);
-    gLayoutSlider->addWidget(sliderHue, 1,3,1,1);
+    gLayoutSlider->addWidget(radioHue, 1, 0, 1, 1);
+    gLayoutSlider->addWidget(spinHue, 1, 1, 1, 1);
+    gLayoutSlider->addWidget(labelHueSuffix, 1, 2, 1, 1);
+    gLayoutSlider->addWidget(sliderHue, 1, 3, 1, 1);
 
     radioSat = new QRadioButton("S:");
     radioSat->setChecked(false);
     spinSat = new QSpinBox(this);
+    spinSat->setPalette(*pal);
     spinSat->setMaximum(100);
     labelSatSuffix = new QLabel("%");
     sliderSat = new XGradientSlider(this);
     sliderSat->setMaximum(100);
     sliderSat->setOrientation(Qt::Horizontal);
-    gLayoutSlider->addWidget(radioSat,2,0,1,1);
-    gLayoutSlider->addWidget(spinSat, 2,1,1,1);
-    gLayoutSlider->addWidget(labelSatSuffix, 2,2,1,1);
-    gLayoutSlider->addWidget(sliderSat, 2,3,1,1);
+    gLayoutSlider->addWidget(radioSat, 2, 0, 1, 1);
+    gLayoutSlider->addWidget(spinSat, 2, 1, 1, 1);
+    gLayoutSlider->addWidget(labelSatSuffix, 2, 2, 1, 1);
+    gLayoutSlider->addWidget(sliderSat, 2, 3, 1, 1);
 
     radioVal = new QRadioButton("V:");
     radioVal->setChecked(false);
     spinVal = new QSpinBox(this);
+    spinVal->setPalette(*pal);
     spinVal->setMaximum(100);
     labelValSuffix = new QLabel("%");
     sliderVal = new XGradientSlider(this);
     sliderVal->setMaximum(100);
     sliderVal->setOrientation(Qt::Horizontal);
-    gLayoutSlider->addWidget(radioVal,3,0,1,1);
-    gLayoutSlider->addWidget(spinVal, 3,1,1,1);
-    gLayoutSlider->addWidget(labelValSuffix, 3,2,1,1);
-    gLayoutSlider->addWidget(sliderVal, 3,3,1,1);
-
-    gLayoutSlider->setVerticalSpacing(3);
+    gLayoutSlider->addWidget(radioVal, 3, 0, 1, 1);
+    gLayoutSlider->addWidget(spinVal, 3, 1, 1, 1);
+    gLayoutSlider->addWidget(labelValSuffix, 3, 2, 1, 1);
+    gLayoutSlider->addWidget(sliderVal, 3, 3, 1, 1);
 
     radioRed = new QRadioButton("R:");
     radioRed->setChecked(false);
     spinRed = new QSpinBox(this);
+    spinRed->setPalette(*pal);
     spinRed->setMaximum(255);
     sliderRed = new XGradientSlider(this);
     sliderRed->setMaximum(255);
     sliderRed->setOrientation(Qt::Horizontal);
-    gLayoutSlider->addWidget(radioRed,4,0,1,1);
-    gLayoutSlider->addWidget(spinRed, 4,1,1,1);
-    gLayoutSlider->addWidget(sliderRed, 4,3,1,1);
+    gLayoutSlider->addWidget(radioRed, 4, 0, 1, 1);
+    gLayoutSlider->addWidget(spinRed, 4, 1, 1, 1);
+    gLayoutSlider->addWidget(sliderRed, 4, 3, 1, 1);
 
     radioGreen = new QRadioButton("G:");
     radioGreen->setChecked(false);
     spinGreen = new QSpinBox(this);
+    spinGreen->setPalette(*pal);
     spinGreen->setMaximum(255);
     sliderGreen = new XGradientSlider(this);
     sliderGreen->setMaximum(255);
     sliderGreen->setOrientation(Qt::Horizontal);
-    gLayoutSlider->addWidget(radioGreen,5,0,1,1);
-    gLayoutSlider->addWidget(spinGreen, 5,1,1,1);
-    gLayoutSlider->addWidget(sliderGreen, 5,3,1,1);
+    gLayoutSlider->addWidget(radioGreen, 5, 0, 1, 1);
+    gLayoutSlider->addWidget(spinGreen, 5, 1, 1, 1);
+    gLayoutSlider->addWidget(sliderGreen, 5, 3, 1, 1);
 
     radioBlue = new QRadioButton("B:");
     radioBlue->setChecked(false);
     spinBlue = new QSpinBox(this);
+    spinBlue->setPalette(*pal);
     spinBlue->setMaximum(255);
     sliderBlue = new XGradientSlider(this);
     sliderBlue->setMaximum(255);
     sliderBlue->setOrientation(Qt::Horizontal);
-    gLayoutSlider->addWidget(radioBlue,6,0,1,1);
-    gLayoutSlider->addWidget(spinBlue, 6,1,1,1);
-    gLayoutSlider->addWidget(sliderBlue, 6,3,1,1);
-    gLayoutSlider->setContentsMargins(5,0,0,0);
-
-    vLayoutPreviewSlider = new QVBoxLayout;
-    vLayoutPreviewSlider->addLayout(hLayoutPreviewButton);
-    vLayoutPreviewSlider->addLayout(gLayoutSlider);
-    hLayoutAll->addLayout(vLayoutPreviewSlider);
-
-    this->setLayout(hLayoutAll);
-
-    SetConnect();
-    SetVerticalSlider();
+    gLayoutSlider->addWidget(radioBlue, 6, 0, 1, 1);
+    gLayoutSlider->addWidget(spinBlue, 6, 1, 1, 1);
+    gLayoutSlider->addWidget(sliderBlue, 6, 3, 1, 1);
+    gLayoutSlider->setContentsMargins(5, 0, 0, 0);
 }
 
-void XColorDialog::SetConnect()
-{
-    QObject::connect(radioHue, SIGNAL(clicked(bool)),this, SLOT(SetVerticalSlider()));
-    QObject::connect(radioSat, SIGNAL(clicked(bool)),this, SLOT(SetVerticalSlider()));
-    QObject::connect(radioVal, SIGNAL(clicked(bool)),this, SLOT(SetVerticalSlider()));
-    QObject::connect(radioRed, SIGNAL(clicked(bool)),this, SLOT(SetVerticalSlider()));
-    QObject::connect(radioGreen, SIGNAL(clicked(bool)),this, SLOT(SetVerticalSlider()));
-    QObject::connect(radioBlue, SIGNAL(clicked(bool)),this, SLOT(SetVerticalSlider()));
+void XColorDialog::setPreviewColors(QColor col){
+
+    QColor colComp = QColor(255 - col.red(), 255 - col.green(), 255 - col.blue(), col.alpha());
+    QColor colOpp = QColor(255 - col.green(), 255 - col.red(), 255 - col.blue(), col.alpha());
+    QColor colRev = QColor(255 - col.blue(), 255 - col.green(), 255 - col.red(), col.alpha());
+
+    colorPreviewCurr->setColor(col);
+    colorPreviewOpp->setColor(colOpp);
+    colorPreviewComp->setColor(colComp);
+    colorPreviewRev->setColor(colRev);
+}
+void XColorDialog::setConnect(){
+
+    QObject::connect(radioHue, SIGNAL(clicked(bool)),this, SLOT(setVerticalSlider()));
+    QObject::connect(radioSat, SIGNAL(clicked(bool)),this, SLOT(setVerticalSlider()));
+    QObject::connect(radioVal, SIGNAL(clicked(bool)),this, SLOT(setVerticalSlider()));
+    QObject::connect(radioRed, SIGNAL(clicked(bool)),this, SLOT(setVerticalSlider()));
+    QObject::connect(radioGreen, SIGNAL(clicked(bool)),this, SLOT(setVerticalSlider()));
+    QObject::connect(radioBlue, SIGNAL(clicked(bool)),this, SLOT(setVerticalSlider()));
     QObject::connect(sliderAlpha, SIGNAL(valueChanged(int)), spinAlpha, SLOT(setValue(int)));
     QObject::connect(spinAlpha, SIGNAL(valueChanged(int)), sliderAlpha, SLOT(setValue(int)));
     QObject::connect(sliderHue, SIGNAL(valueChanged(int)), spinHue, SLOT(setValue(int)));
@@ -197,36 +253,36 @@ void XColorDialog::SetConnect()
     QObject::connect(spinGreen, SIGNAL(valueChanged(int)), sliderGreen, SLOT(setValue(int)));
     QObject::connect(sliderBlue, SIGNAL(valueChanged(int)), spinBlue, SLOT(setValue(int)));
     QObject::connect(spinBlue, SIGNAL(valueChanged(int)), sliderBlue, SLOT(setValue(int)));
-    QObject::connect(sliderHue, SIGNAL(valueChanged(int)), this, SLOT(SetHSV()));
-    QObject::connect(sliderSat, SIGNAL(valueChanged(int)), this, SLOT(SetHSV()));
-    QObject::connect(sliderVal, SIGNAL(valueChanged(int)), this, SLOT(SetHSV()));
-    QObject::connect(sliderRed, SIGNAL(valueChanged(int)), this, SLOT(SetRGB()));
-    QObject::connect(sliderGreen, SIGNAL(valueChanged(int)), this, SLOT(SetRGB()));
-    QObject::connect(sliderBlue, SIGNAL(valueChanged(int)), this, SLOT(SetRGB()));
-    QObject::connect(sliderAlpha, SIGNAL(valueChanged(int)), this, SLOT(UpdateWidgets()));
-    QObject::connect(colorSquare, SIGNAL(colorSelected(QColor)), this, SLOT(UpdateWidgets()));
+    QObject::connect(sliderHue, SIGNAL(valueChanged(int)), this, SLOT(setHSV()));
+    QObject::connect(sliderSat, SIGNAL(valueChanged(int)), this, SLOT(setHSV()));
+    QObject::connect(sliderVal, SIGNAL(valueChanged(int)), this, SLOT(setHSV()));
+    QObject::connect(sliderRed, SIGNAL(valueChanged(int)), this, SLOT(setRGB()));
+    QObject::connect(sliderGreen, SIGNAL(valueChanged(int)), this, SLOT(setRGB()));
+    QObject::connect(sliderBlue, SIGNAL(valueChanged(int)), this, SLOT(setRGB()));
+    QObject::connect(sliderAlpha, SIGNAL(valueChanged(int)), this, SLOT(updateWidgets()));
+    QObject::connect(colorSquare, SIGNAL(colorSelected(QColor)), this, SLOT(updateWidgets()));
     QObject::connect(this, SIGNAL(checkedChanged(char)), colorSquare, SLOT(setCheckedColor(char)));
-    QObject::connect(cancelButton, SIGNAL(clicked()), this, SLOT(close()));
-    QObject::connect(okButton, SIGNAL(clicked()), this, SLOT(ClickedOkButton()));
+    //QObject::connect(cancelButton, SIGNAL(clicked()), this, SLOT(close()));
+    //QObject::connect(okButton, SIGNAL(clicked()), this, SLOT(ClickedOkButton()));
 
 }
 
-QColor XColorDialog::color() const
-{
+QColor XColorDialog::color() const{
+
     QColor color = colorSquare->color();
     color.setAlpha(qRound(sliderAlpha->value() * 2.55));
     return color;
 }
 
-void XColorDialog::SetColor(QColor color)
-{
+void XColorDialog::setColor(QColor color){
+
     colorSquare->setColor(color);
     sliderAlpha->setValue(color.alpha() / 2.55);
-    UpdateWidgets();
+    updateWidgets();
 }
 
-void XColorDialog::SetVerticalSlider()
-{
+void XColorDialog::setVerticalSlider(){
+
     disconnect(verticalSlider, SIGNAL(valueChanged(int)), sliderHue, SLOT(setValue(int)));
     disconnect(verticalSlider, SIGNAL(valueChanged(int)), sliderSat, SLOT(setValue(int)));
     disconnect(verticalSlider, SIGNAL(valueChanged(int)), sliderVal, SLOT(setValue(int)));
@@ -294,19 +350,19 @@ void XColorDialog::SetVerticalSlider()
 
 }
 
-void XColorDialog::SetHSV()
-{
+void XColorDialog::setHSV(){
+
     if(!signalsBlocked())
     {
         colorSquare->setColor(QColor::fromHsv(sliderHue->value(),
                                               qRound(sliderSat->value()*2.55),
                                               qRound(sliderVal->value()*2.55)));
-        UpdateWidgets();
+        updateWidgets();
     }
 }
 
-void XColorDialog::SetRGB()
-{
+void XColorDialog::setRGB(){
+
     if(!signalsBlocked())
     {
         QColor color(sliderRed->value(), sliderGreen->value(), sliderBlue->value());
@@ -315,17 +371,18 @@ void XColorDialog::SetRGB()
             color = QColor::fromHsv(sliderHue->value(), 0, color.value());
         }
         colorSquare->setColor(color);
-        UpdateWidgets();
+        updateWidgets();
     }
 }
 
-void XColorDialog::UpdateWidgets()
-{
+void XColorDialog::updateWidgets(){
+
     blockSignals(true);
     foreach(QWidget* w, findChildren<QWidget*>())
         w->blockSignals(true);
 
     QColor col = color();
+    
 
     sliderRed->setValue(col.red());
     spinRed->setValue(sliderRed->value());
@@ -355,12 +412,8 @@ void XColorDialog::UpdateWidgets()
     sliderVal->setFirstColor(QColor::fromHsvF(colorSquare->hue(),colorSquare->saturation(),0));
     sliderVal->setLastColor(QColor::fromHsvF(colorSquare->hue(),colorSquare->saturation(),1));
 
-    colorPreviewCurr->setColor(col);
-    colorPreviewOpp->setColor(col);
-    colorPreviewComp->setColor(col);
-    colorPreviewRev->setColor(col);
-
-    SetVerticalSlider();
+    setVerticalSlider();
+    setPreviewColors(col);
 
     blockSignals(false);
     foreach(QWidget* w, findChildren<QWidget*>())
@@ -369,8 +422,8 @@ void XColorDialog::UpdateWidgets()
     emit colorChanged(col);
 }
 
-void XColorDialog::ClickedOkButton()
-{
+void XColorDialog::clickedOkButton(){
+
     QColor color = this->color();
     emit colorSelected(color);
     this->close();

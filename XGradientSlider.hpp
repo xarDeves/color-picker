@@ -17,6 +17,10 @@ private:
     QVector<QColor> col_list;
     QBrush back;
 
+    void XGradientSlider::drawHorizontal(QPainter& painter);
+    void XGradientSlider::drawVertical(QPainter& painter);
+
+
 public:
     explicit XGradientSlider(QWidget *parent = 0);
 

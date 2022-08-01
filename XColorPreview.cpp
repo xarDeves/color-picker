@@ -30,7 +30,7 @@ void XColorPreview::paintEvent(QPaintEvent *)
     painter.setRenderHint(QPainter::Antialiasing,true);
 
     painter.setPen(QPen(Qt::black, 1));
-    QSize rectSize(40,40);
+    QSize rectSize(90,40);
     painter.setBrush(back);
     painter.drawRect(1,1,rectSize.width(),rectSize.height());
 

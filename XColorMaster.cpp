@@ -42,7 +42,7 @@ bool XColorMaster::eventFilter(QObject *obj, QEvent *e)
         QMouseEvent *event = static_cast<QMouseEvent*> (e);
         if(event->button() == Qt::LeftButton)
         {
-            colorDialog->SetColor(color);
+            colorDialog->setColor(color);
             colorDialog->show();
         }
         return true;

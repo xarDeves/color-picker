@@ -10,6 +10,10 @@
 #include <QPushButton>
 #include <QSpinBox>
 #include <QRadioButton>
+#include <QCheckBox>
+#include <QGraphicsBlurEffect>
+
+#define BG_COLOR "#353535"
 
 class XColorDialog : public QDialog
 {
@@ -25,15 +29,17 @@ private:
         H,S,V,R,G,B
     }checkedColor;
 
+    QPalette*           pal;
+
     QHBoxLayout*        hLayoutAll;
     XColorSquare*       colorSquare;
     XGradientSlider*    verticalSlider;
 
-    QGridLayout*        vLayoutPreview;
-    QLabel*             labelCurr;
-    QLabel*             labelOpp;
-    QLabel*             labeComp;
-    QLabel*             labelRev;
+    QVBoxLayout*        vLayoutPreview;
+    QCheckBox*             checkBoxCurr;
+    QCheckBox*             checkBoxOpp;
+    QCheckBox*             checkBoxComp;
+    QCheckBox*             checkBoxRev;
     XColorPreview*      colorPreviewCurr;
     XColorPreview*      colorPreviewOpp;
     XColorPreview*      colorPreviewComp;
@@ -44,7 +50,6 @@ private:
     QPushButton*        cancelButton;
 
     QHBoxLayout*        hLayoutPreviewButton;
-    QVBoxLayout*        vLayoutPreviewSlider;
 
     QGridLayout*        gLayoutSlider;
     QLabel*             labelAlpha;
@@ -79,7 +84,11 @@ private:
 
 private:
     void    SetupUI();
-    void    SetConnect();
+    void    setConnect();
+    void    setPreviewColors(QColor col);
+    void    setupPicker();
+    void    setupPeviews();
+    void    setupSliders();
 
 signals:
     void    colorChanged(QColor);
@@ -87,14 +96,14 @@ signals:
     void    colorSelected(QColor);
 
 public slots:
-    void    UpdateWidgets();
-    void    SetHSV();
-    void    SetRGB();
+    void    updateWidgets();
+    void    setHSV();
+    void    setRGB();
 
-    void    SetColor(QColor color);
-    void    SetVerticalSlider();
+    void    setColor(QColor color);
+    void    setVerticalSlider();
 
-    void    ClickedOkButton();
+    void    clickedOkButton();
 };
 
 #endif // XCOLORDIALOG_H

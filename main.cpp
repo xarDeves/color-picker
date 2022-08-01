@@ -2,6 +2,8 @@
 #include "XColorDialog.h"
 #include "XColorSquare.h"
 #include <QApplication>
+#include <QStyleFactory>
+#include <iostream>
 
 void launchDialog() {
     Dialog *w = new Dialog;
@@ -16,6 +18,8 @@ void launchStandalone() {
 int main(int argc, char *argv[]){
 
     QApplication a(argc, argv);
+    //a.setStyle(QStyleFactory::create("Fusion"));
+
 
     //launchDialog();
     launchStandalone();
